@@ -37,9 +37,10 @@ func (p *TPool) AddJob(payload interface{}) {
 
 // Worker
 type TWorker struct {
-	id   int    // worker id
-	pool string // pool id
-	log  *slog.Logger
+	id        int    // worker id
+	pool      string // pool id
+	log       *slog.Logger
+	Extention interface{}
 }
 
 // Create new worker with context, payload channel and job handler
