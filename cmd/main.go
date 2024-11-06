@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -15,17 +16,19 @@ type TPayload struct {
 	N int
 }
 
-func MyJobHandler(log *slog.Logger, payload pool.TJobPayload) int {
-	t := rand.Intn(10000)
-	time.Sleep(time.Duration(t) * time.Millisecond)
-	result := payload.(TPayload).N * 10
-	log.Info("calculated", "result", result)
-	return 0
+func MyJobHandler(ctx context.Context, log *slog.Logger, payload pool.TJobPayload) error {
+	select {
+	case <-ctx.Done():
+		return errors.New("job cancelled")
+	case <-time.After(time.Duration(rand.Intn(10000)) * time.Millisecond):
+		log.Info("result is calculated", "result", payload.(TPayload).N*10)
+		return nil
+	}
 }
 
 func main() {
 
-	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	mypool := pool.New(log, "1")
 	ctx, cancel := context.WithCancel(context.Background())
@@ -35,7 +38,7 @@ func main() {
 		payload.N = i
 		mypool.AddJob(payload)
 	}
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	fmt.Println("Main is stopping...")
 	cancel()
 	time.Sleep(10 * time.Second)
