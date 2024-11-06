@@ -16,7 +16,7 @@ type TPayload struct {
 	N int
 }
 
-func MyJobHandler(ctx context.Context, log *slog.Logger, payload pool.TJobPayload) error {
+func MyJobHandler(ctx context.Context, log *slog.Logger, payload pool.TJobPayload, worker *pool.TWorker) error {
 	select {
 	case <-ctx.Done():
 		return errors.New("job cancelled")

@@ -6,7 +6,7 @@ import (
 )
 
 type TJobPayload interface{}
-type TJobFunc func(ctx context.Context, log *slog.Logger, payload TJobPayload) error
+type TJobFunc func(ctx context.Context, log *slog.Logger, payload TJobPayload, worker *TWorker) error
 
 // Create new pool with logger and id
 func New(log *slog.Logger, id string) *TPool {
@@ -37,10 +37,10 @@ func (p *TPool) AddJob(payload interface{}) {
 
 // Worker
 type TWorker struct {
-	id        int    // worker id
-	pool      string // pool id
-	log       *slog.Logger
-	Extention interface{}
+	id   int    // worker id
+	pool string // pool id
+	log  *slog.Logger
+	Ext  interface{} // extra data tailored to specific worker
 }
 
 // Create new worker with context, payload channel and job handler
@@ -54,7 +54,7 @@ func (w *TWorker) new(ctx context.Context, ch chan TJobPayload, jobfunc TJobFunc
 				return
 			case payload := <-ch:
 				w.log.Debug("worker took the job")
-				err := jobfunc(ctx, w.log, payload)
+				err := jobfunc(ctx, w.log, payload, w)
 				if err != nil {
 					w.log.Error("worker finished the job", "error", err)
 				} else {
